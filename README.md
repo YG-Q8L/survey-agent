@@ -39,12 +39,18 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Set your API key
-export ANTHROPIC_API_KEY="sk-ant-..."
+# Set your API key (pick one)
+export ANTHROPIC_API_KEY="sk-ant-..."    # for Anthropic direct
+export OPENROUTER_API_KEY="sk-or-..."    # for OpenRouter
 
 # Run with a topic
-python main.py --topic ich       # 非遗数字化保护
-python main.py --topic example   # template for your own topic
+python main.py --topic ich
+
+# Use OpenRouter with a different model
+python main.py --topic ich --provider openrouter --model anthropic/claude-sonnet-4
+
+# Use a specific Anthropic model
+python main.py --topic ich --model claude-opus-4-6
 ```
 
 ## Adding a New Topic
@@ -68,8 +74,9 @@ Then run: `python main.py --topic my_topic`
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | (required) | Your Anthropic API key |
-| `SURVEY_MODEL` | `claude-sonnet-4-20250514` | Claude model to use |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key (required if provider=anthropic) |
+| `OPENROUTER_API_KEY` | — | OpenRouter API key (required if provider=openrouter) |
+| `SURVEY_MODEL` | `claude-sonnet-4-20250514` | Default model (overridden by --model) |
 | `SURVEY_PAPERS_PER_QUERY` | `20` | Max papers per search query |
 | `SURVEY_OUTPUT_DIR` | `output` | Output directory |
 
@@ -78,6 +85,7 @@ Then run: `python main.py --topic my_topic`
 ```
 survey-agent/
 ├── main.py              # Entry point — python main.py --topic ich
+├── llm_client.py        # Unified LLM client (Anthropic / OpenRouter)
 ├── config.py            # Model, search, and LLM parameter settings
 ├── state.py             # PaperState shared across all agents
 ├── topics/              # One file per survey topic
@@ -116,7 +124,8 @@ After running, check the `output/` directory:
 
 Only 3 packages — no frameworks, no vector databases:
 
-- `anthropic` — Claude API
+- `anthropic` — Anthropic API (direct)
+- `openai` — OpenRouter API (OpenAI-compatible)
 - `requests` — Semantic Scholar API
 - `arxiv` — arXiv API
 

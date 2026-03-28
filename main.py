@@ -2,16 +2,22 @@
 Survey Agent — Multi-agent system for writing technical survey papers.
 
 Usage:
+    # Anthropic (default)
     export ANTHROPIC_API_KEY="sk-ant-..."
     python main.py --topic ich
-    python main.py --topic example
+
+    # OpenRouter
+    export OPENROUTER_API_KEY="sk-or-..."
+    python main.py --topic ich --provider openrouter --model anthropic/claude-sonnet-4
+
+    # Custom model
+    python main.py --topic ich --model claude-opus-4-6
 """
 
 import argparse
 
-from anthropic import Anthropic
-
 import config
+from llm_client import create_client
 from state import PaperState, Phase
 from agents import ResearchLead, LiteratureSearcher, Analyst, Writer, Reviewer
 from tools.file_io import save_state_snapshot, save_markdown_paper
@@ -24,13 +30,21 @@ def main():
         "--topic", required=True,
         help="Topic name — must match a file in topics/ (e.g. 'ich', 'example')",
     )
+    parser.add_argument(
+        "--provider", default="anthropic", choices=["anthropic", "openrouter"],
+        help="LLM provider (default: anthropic)",
+    )
+    parser.add_argument(
+        "--model", default=None,
+        help="Model name (default: from config, e.g. claude-sonnet-4-20250514)",
+    )
     args = parser.parse_args()
 
     config.load_topic(args.topic)
 
     # ── Initialize ───────────────────────────────────────────────────
-    client = Anthropic()
-    model = config.MODEL
+    model = args.model or config.MODEL
+    client = create_client(args.provider, model)
 
     state = PaperState(
         topic=config.TOPIC,
@@ -38,16 +52,17 @@ def main():
         focus_areas=list(config.FOCUS_AREAS),
     )
 
-    lead = ResearchLead(client=client, model=model)
-    searcher = LiteratureSearcher(client=client, model=model)
-    analyst = Analyst(client=client, model=model)
-    writer = Writer(client=client, model=model)
-    reviewer = Reviewer(client=client, model=model)
+    lead = ResearchLead(client=client)
+    searcher = LiteratureSearcher(client=client)
+    analyst = Analyst(client=client)
+    writer = Writer(client=client)
+    reviewer = Reviewer(client=client)
 
     output_dir = config.OUTPUT_DIR
 
     print("=" * 60)
     print(f"  Survey Agent — {state.topic}")
+    print(f"  Provider: {args.provider}")
     print(f"  Model: {model}")
     print(f"  Focus: {', '.join(state.focus_areas)}")
     print("=" * 60)

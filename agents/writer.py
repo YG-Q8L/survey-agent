@@ -12,12 +12,12 @@ from state import PaperState, PaperSection
 
 
 class Writer(BaseAgent):
-    def __init__(self, client, model: str):
+    def __init__(self, client):
         prompt = config.load_prompt("writer").format(
             topic=config.TOPIC,
             topic_en=config.TOPIC_EN,
         )
-        super().__init__("Writer", client, model, prompt)
+        super().__init__("Writer", client, prompt)
 
     def run(self, state: PaperState) -> PaperState:
         """Draft all sections defined in the outline."""

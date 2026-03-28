@@ -13,13 +13,13 @@ from tools.search import search_all
 
 
 class LiteratureSearcher(BaseAgent):
-    def __init__(self, client, model: str):
+    def __init__(self, client):
         prompt = config.load_prompt("literature_searcher").format(
             topic=config.TOPIC,
             topic_en=config.TOPIC_EN,
             focus_areas=", ".join(config.FOCUS_AREAS),
         )
-        super().__init__("LiteratureSearcher", client, model, prompt)
+        super().__init__("LiteratureSearcher", client, prompt)
 
     def run(self, state: PaperState, queries: list[str] | None = None) -> PaperState:
         """

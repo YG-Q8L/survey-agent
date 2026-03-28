@@ -12,13 +12,13 @@ from state import PaperState
 
 
 class ResearchLead(BaseAgent):
-    def __init__(self, client, model: str):
+    def __init__(self, client):
         prompt = config.load_prompt("research_lead").format(
             topic=config.TOPIC,
             topic_en=config.TOPIC_EN,
             focus_areas=", ".join(config.FOCUS_AREAS),
         )
-        super().__init__("ResearchLead", client, model, prompt)
+        super().__init__("ResearchLead", client, prompt)
 
     # ── Phase 1: Planning ────────────────────────────────────────────
 

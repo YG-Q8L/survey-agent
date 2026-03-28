@@ -12,12 +12,12 @@ from state import PaperState, ReviewComment
 
 
 class Reviewer(BaseAgent):
-    def __init__(self, client, model: str):
+    def __init__(self, client):
         prompt = config.load_prompt("reviewer").format(
             topic=config.TOPIC,
             topic_en=config.TOPIC_EN,
         )
-        super().__init__("Reviewer", client, model, prompt)
+        super().__init__("Reviewer", client, prompt)
 
     def run(self, state: PaperState) -> PaperState:
         """Review all drafted sections and produce structured feedback."""

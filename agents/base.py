@@ -1,18 +1,16 @@
 """
 Base class for all agents in the survey system.
 
-Provides LLM calling, retry logic, and JSON response parsing.
+Provides LLM calling (via LLMClient) and JSON response parsing.
 """
 
 from __future__ import annotations
 
 import json
 import re
-import time
 from abc import ABC, abstractmethod
 
-from anthropic import Anthropic, APIError, RateLimitError
-
+from llm_client import LLMClient
 from state import PaperState
 
 
@@ -22,13 +20,11 @@ class BaseAgent(ABC):
     def __init__(
         self,
         name: str,
-        client: Anthropic,
-        model: str,
+        client: LLMClient,
         system_prompt: str,
     ):
         self.name = name
         self.client = client
-        self.model = model
         self.system_prompt = system_prompt
         self.conversation_history: list[dict] = []
 
@@ -42,7 +38,12 @@ class BaseAgent(ABC):
     ) -> str:
         """Multi-turn call — accumulates conversation history."""
         self.conversation_history.append({"role": "user", "content": user_message})
-        text = self._do_api_call(self.conversation_history, max_tokens, temperature)
+        text = self.client.chat(
+            messages=self.conversation_history,
+            system=self.system_prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
         self.conversation_history.append({"role": "assistant", "content": text})
         return text
 
@@ -53,37 +54,12 @@ class BaseAgent(ABC):
         temperature: float = 0.3,
     ) -> str:
         """Stateless single-shot call — no history accumulation."""
-        messages = [{"role": "user", "content": user_message}]
-        return self._do_api_call(messages, max_tokens, temperature)
-
-    def _do_api_call(
-        self,
-        messages: list[dict],
-        max_tokens: int,
-        temperature: float,
-        retries: int = 3,
-    ) -> str:
-        """Actual API call with retry on rate-limit / transient errors."""
-        for attempt in range(retries):
-            try:
-                response = self.client.messages.create(
-                    model=self.model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    system=self.system_prompt,
-                    messages=messages,
-                )
-                return response.content[0].text
-            except RateLimitError:
-                wait = 2**attempt * 5  # 5s, 10s, 20s
-                print(f"[{self.name}] Rate limited, waiting {wait}s...")
-                time.sleep(wait)
-            except APIError as e:
-                print(f"[{self.name}] API error (attempt {attempt + 1}): {e}")
-                if attempt == retries - 1:
-                    raise
-                time.sleep(2)
-        raise RuntimeError(f"Agent {self.name} failed after {retries} retries")
+        return self.client.chat(
+            messages=[{"role": "user", "content": user_message}],
+            system=self.system_prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
 
     def reset_history(self) -> None:
         """Clear conversation history between phases."""
@@ -123,7 +99,7 @@ class BaseAgent(ABC):
                 except json.JSONDecodeError:
                     continue
 
-        raise ValueError(f"[{__class__.__name__}] Could not parse JSON from response:\n{text[:500]}")
+        raise ValueError(f"Could not parse JSON from response:\n{text[:500]}")
 
     def _call_llm_json(
         self,
@@ -136,7 +112,6 @@ class BaseAgent(ABC):
         try:
             return self.parse_json(text)
         except ValueError:
-            # Retry with explicit instruction
             retry_msg = (
                 "Your previous response was not valid JSON. "
                 "Please respond with ONLY a valid JSON object/array, "

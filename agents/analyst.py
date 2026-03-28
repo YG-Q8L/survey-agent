@@ -12,13 +12,13 @@ from state import PaperState, ThemeCluster
 
 
 class Analyst(BaseAgent):
-    def __init__(self, client, model: str):
+    def __init__(self, client):
         prompt = config.load_prompt("analyst").format(
             topic=config.TOPIC,
             topic_en=config.TOPIC_EN,
             focus_areas=", ".join(config.FOCUS_AREAS),
         )
-        super().__init__("Analyst", client, model, prompt)
+        super().__init__("Analyst", client, prompt)
 
     def run(self, state: PaperState) -> PaperState:
         """Cluster papers into themes and produce analysis."""
