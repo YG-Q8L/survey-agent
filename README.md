@@ -42,15 +42,17 @@ pip install -r requirements.txt
 # Set your API key
 export ANTHROPIC_API_KEY="sk-ant-..."
 
-# Run
-python main.py
+# Run with a topic
+python main.py --topic ich       # 非遗数字化保护
+python main.py --topic example   # template for your own topic
 ```
 
-## Configuration
+## Adding a New Topic
 
-Edit `config.py` to set your survey topic:
+Copy `topics/example.py` and fill in your own:
 
 ```python
+# topics/my_topic.py
 TOPIC = "Your Research Topic"
 TOPIC_EN = "Your Research Topic (English)"
 FOCUS_AREAS = [
@@ -60,13 +62,13 @@ FOCUS_AREAS = [
 ]
 ```
 
-Or use environment variables:
+Then run: `python main.py --topic my_topic`
+
+## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ANTHROPIC_API_KEY` | (required) | Your Anthropic API key |
-| `SURVEY_TOPIC` | — | Research topic (Chinese or English) |
-| `SURVEY_TOPIC_EN` | — | Research topic in English |
 | `SURVEY_MODEL` | `claude-sonnet-4-20250514` | Claude model to use |
 | `SURVEY_PAPERS_PER_QUERY` | `20` | Max papers per search query |
 | `SURVEY_OUTPUT_DIR` | `output` | Output directory |
@@ -75,9 +77,12 @@ Or use environment variables:
 
 ```
 survey-agent/
-├── main.py              # Entry point — runs the 6-phase pipeline
-├── config.py            # Topic, model, and parameter settings
+├── main.py              # Entry point — python main.py --topic ich
+├── config.py            # Model, search, and LLM parameter settings
 ├── state.py             # PaperState shared across all agents
+├── topics/              # One file per survey topic
+│   ├── ich.py           # 非遗数字化保护
+│   └── example.py       # Template for new topics
 ├── agents/
 │   ├── base.py          # BaseAgent: LLM calls, retry, JSON parsing
 │   ├── research_lead.py # Orchestrator — plans, reviews, triages
@@ -101,7 +106,7 @@ After running, check the `output/` directory:
 
 ## Customization
 
-**Switch topic**: Change `config.py` — that's it for most cases.
+**Switch topic**: Add a new file in `topics/` and run with `--topic <name>`.
 
 **Domain-specific tuning**: Edit prompt templates in `prompts/*.txt` to add domain knowledge or adjust writing style.
 

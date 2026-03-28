@@ -1,32 +1,45 @@
 """
 Survey Agent configuration.
 
-To customize for a specific research topic, modify the TOPIC section below.
-All other settings are topic-agnostic defaults.
+Topic-specific settings are loaded from topics/<name>.py via load_topic().
+All other settings here are topic-agnostic defaults.
 """
 
+import importlib
 import os
 
-# ── TOPIC (the only section you need to change per survey) ──────────────
+# ── TOPIC (loaded dynamically from topics/) ─────────────────────────
 
-TOPIC = os.environ.get("SURVEY_TOPIC", "Your Research Topic Here")
-TOPIC_EN = os.environ.get("SURVEY_TOPIC_EN", "Your Research Topic Here (English)")
-FOCUS_AREAS: list[str] = [
-    # Add 3-6 focus areas / sub-topics, e.g.:
-    # "deep learning",
-    # "large language models",
-]
+TOPIC: str = ""
+TOPIC_EN: str = ""
+FOCUS_AREAS: list[str] = []
 
-# ── MODEL ────────────────────────────────────────────────────────────────
+
+def load_topic(name: str) -> None:
+    """
+    Load topic config from topics/<name>.py into this module's globals.
+
+    Usage:
+        config.load_topic("ich")
+        print(config.TOPIC)  # "非遗数字化保护"
+    """
+    global TOPIC, TOPIC_EN, FOCUS_AREAS
+    module = importlib.import_module(f"topics.{name}")
+    TOPIC = getattr(module, "TOPIC")
+    TOPIC_EN = getattr(module, "TOPIC_EN")
+    FOCUS_AREAS = getattr(module, "FOCUS_AREAS")
+
+
+# ── MODEL ────────────────────────────────────────────────────────────
 
 MODEL = os.environ.get("SURVEY_MODEL", "claude-sonnet-4-20250514")
 
-# ── SEARCH ───────────────────────────────────────────────────────────────
+# ── SEARCH ───────────────────────────────────────────────────────────
 
 PAPERS_PER_QUERY = int(os.environ.get("SURVEY_PAPERS_PER_QUERY", "20"))
 MAX_SEARCH_ROUNDS = int(os.environ.get("SURVEY_MAX_SEARCH_ROUNDS", "2"))
 
-# ── LLM PARAMETERS ──────────────────────────────────────────────────────
+# ── LLM PARAMETERS ──────────────────────────────────────────────────
 
 TEMPERATURE_STRUCTURED = 0.3   # for JSON / structured output tasks
 TEMPERATURE_CREATIVE = 0.5     # for prose writing
@@ -34,11 +47,11 @@ TEMPERATURE_CREATIVE = 0.5     # for prose writing
 MAX_TOKENS_DEFAULT = 4096
 MAX_TOKENS_WRITING = 8192      # longer budget for paper sections
 
-# ── OUTPUT ───────────────────────────────────────────────────────────────
+# ── OUTPUT ───────────────────────────────────────────────────────────
 
 OUTPUT_DIR = os.environ.get("SURVEY_OUTPUT_DIR", "output")
 
-# ── PROMPTS ──────────────────────────────────────────────────────────────
+# ── PROMPTS ──────────────────────────────────────────────────────────
 
 PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 

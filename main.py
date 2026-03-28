@@ -3,10 +3,11 @@ Survey Agent — Multi-agent system for writing technical survey papers.
 
 Usage:
     export ANTHROPIC_API_KEY="sk-ant-..."
-    python main.py
-
-Configure the topic in config.py or via environment variables.
+    python main.py --topic ich
+    python main.py --topic example
 """
+
+import argparse
 
 from anthropic import Anthropic
 
@@ -17,6 +18,16 @@ from tools.file_io import save_state_snapshot, save_markdown_paper
 
 
 def main():
+    # ── Parse args ───────────────────────────────────────────────────
+    parser = argparse.ArgumentParser(description="Survey Agent")
+    parser.add_argument(
+        "--topic", required=True,
+        help="Topic name — must match a file in topics/ (e.g. 'ich', 'example')",
+    )
+    args = parser.parse_args()
+
+    config.load_topic(args.topic)
+
     # ── Initialize ───────────────────────────────────────────────────
     client = Anthropic()
     model = config.MODEL
